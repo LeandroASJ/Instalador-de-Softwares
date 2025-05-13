@@ -1,1 +1,1 @@
-# Instalador-de-Softwares
+Recentemente, observei uma automação voltada para a instalação de aplicativos e decidi adaptar essa ideia para otimizar uma das funções da minha rotina: a padronização de aplicativos em máquinas recém-formatadas e a troca de hostname. Frequentemente, a alteração do hostname acaba sendo esquecida devido à sua execução manual e demorada. Com o script desenvolvido em PowerShell, uma ferramenta nativa dos sistemas operacionais Windows 10 e 11, esses softwares instalados podem ser modificados de acordo com a sua necessidade.
