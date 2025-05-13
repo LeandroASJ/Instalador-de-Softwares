@@ -1,0 +1,121 @@
+# Verifica se esta com permissao de administrador
+if (-not ([Security.Principal.WindowsPrincipal] `
+    [Security.Principal.WindowsIdentity]::GetCurrent()
+    ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    Start-Process powershell.exe "-ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs
+    exit
+}
+
+winget install --id=Google.Chrome -e --accept-package-agreements --accept-source-agreements
+winget install --id=Mozilla.Firefox -e --accept-package-agreements --accept-source-agreements
+winget install --id=RARLab.WinRAR -e --accept-package-agreements --accept-source-agreements
+winget install --id=VideoLAN.VLC -e --accept-package-agreements --accept-source-agreements
+winget install --id=Oracle.JavaRuntimeEnvironment -e --accept-package-agreements --accept-source-agreements
+
+Add-Type -AssemblyName System.Windows.Forms
+
+# Mapeia nomes 
+$empresaTags = @{
+    "Empresa 1"                   = "TAG-"
+    "Empresa 2"                   = "TAG-"
+    "Empresa 3"                   = "TAG-"
+    "Empresa 4"                   = "TAG-"
+    "Empresa 5"                   = "TAG-"
+    "Empresa 6"                   = "TAG-"
+}
+
+# Interface
+$form = New-Object System.Windows.Forms.Form
+$form.Text = "Escolha uma empresa e digite o número da máquina"
+$form.Size = New-Object System.Drawing.Size(400, 350)
+$form.StartPosition = "CenterScreen"
+
+# Lista de empresas
+$listBox = New-Object System.Windows.Forms.ListBox
+$listBox.Location = New-Object System.Drawing.Point(50, 30)
+$listBox.Size = New-Object System.Drawing.Size(280, 150)
+$listBox.Items.AddRange($empresaTags.Keys)
+$form.Controls.Add($listBox)
+
+# Campo para numero da maquina
+$label = New-Object System.Windows.Forms.Label
+$label.Text = "Numero da maquina:"
+$label.Location = New-Object System.Drawing.Point(50, 190)
+$form.Controls.Add($label)
+
+$textBox = New-Object System.Windows.Forms.TextBox
+$textBox.Location = New-Object System.Drawing.Point(180, 188)
+$textBox.Size = New-Object System.Drawing.Size(150, 20)
+$form.Controls.Add($textBox)
+
+# Botao 1 Renomear e Reiniciar
+$btnReiniciar = New-Object System.Windows.Forms.Button
+$btnReiniciar.Text = "Renomear e Reiniciar"
+$btnReiniciar.Location = New-Object System.Drawing.Point(50, 230)
+$btnReiniciar.Size = New-Object System.Drawing.Size(140, 30)
+$btnReiniciar.Add_Click({
+    $selecionado = $listBox.SelectedItem
+    $numero = $textBox.Text.Trim()
+    
+    if ($selecionado -and $numero) {
+        $tag = $empresaTags[$selecionado]
+        $novoNome = "$tag$numero"
+
+        $confirm = [System.Windows.Forms.MessageBox]::Show(
+            "Renomear para:`n$novoNome`nO sistema será reiniciado. Confirmar?",
+            "Confirmar",
+            [System.Windows.Forms.MessageBoxButtons]::YesNo,
+            [System.Windows.Forms.MessageBoxIcon]::Question
+        )
+
+        if ($confirm -eq "Yes") {
+            try {
+                Rename-Computer -NewName $novoNome -Force -Restart
+            } catch {
+                [System.Windows.Forms.MessageBox]::Show("Erro ao renomear: $_")
+            }
+        }
+    } else {
+        [System.Windows.Forms.MessageBox]::Show("Selecione uma empresa e digite o número.")
+    }
+})
+
+# Botao 2 Somente Renomear
+$btnApenasRenomear = New-Object System.Windows.Forms.Button
+$btnApenasRenomear.Text = "Somente Renomear"
+$btnApenasRenomear.Location = New-Object System.Drawing.Point(200, 230)
+$btnApenasRenomear.Size = New-Object System.Drawing.Size(130, 30)
+$btnApenasRenomear.Add_Click({
+    $selecionado = $listBox.SelectedItem
+    $numero = $textBox.Text.Trim()
+
+    if ($selecionado -and $numero) {
+        $tag = $empresaTags[$selecionado]
+        $novoNome = "$tag$numero"
+
+        $confirm = [System.Windows.Forms.MessageBox]::Show(
+            "Renomear para:`n$novoNome`nSem reiniciar. Confirmar?",
+            "Confirmar",
+            [System.Windows.Forms.MessageBoxButtons]::YesNo,
+            [System.Windows.Forms.MessageBoxIcon]::Information
+        )
+
+        if ($confirm -eq "Yes") {
+            try {
+                Rename-Computer -NewName $novoNome -Force
+                [System.Windows.Forms.MessageBox]::Show("Renomeado com sucesso. Reinicie manualmente.")
+            } catch {
+                [System.Windows.Forms.MessageBox]::Show("Erro ao renomear: $_")
+            }
+        }
+    } else {
+        [System.Windows.Forms.MessageBox]::Show("Selecione uma empresa e digite o número.")
+    }
+})
+
+# Finaliza a interface
+$form.Controls.Add($btnReiniciar)
+$form.Controls.Add($btnApenasRenomear)
+$form.Topmost = $true
+$form.Add_Shown({ $form.Activate() })
+$form.ShowDialog()
